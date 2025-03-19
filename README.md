@@ -4,16 +4,16 @@ Simple CRUD app, that features music service with groups and songs CRUD.
 
 ## 📋 Features
 
-- **App Features**:
-    - Music groups (artists/bands) CRUD operations
-    - Verse-by-verse pagination
-    - Preserves original formatting
-    - RESTful endpoints
-    - Detailed error responses
-    - Filtering capabilities
-    - Efficient database queries
-    - Connection pooling
-    - Proper error handling
+- **Complete Music Library Management**:
+  - Music groups (artists/bands) CRUD operations
+  - Verse-by-verse pagination
+  - Preserves original formatting
+  - RESTful endpoints
+  - Detailed error responses
+  - Filtering capabilities
+  - Efficient database queries
+  - Connection pooling
+  - Proper error handling
 
 ## 🛠️ Tech Stack
 
@@ -21,6 +21,64 @@ Simple CRUD app, that features music service with groups and songs CRUD.
 - **Database**: PostgreSQL with JSONB for structured lyrics storage
 - **Documentation**: Swagger/OpenAPI and Postman docs file
 - **Deployment**: Docker-ready
+
+## 📁 Project Structure
+
+```
+music-library/
+├── cmd/
+│   └── music-service/
+│       └── main.go                 # Application entry point
+├── configs/
+│   ├── config.yml                  # Base configuration
+│   ├── database/
+│   │   ├── query.sql               # SQLc queries
+│   │   ├── schema.sql              # Database schema
+│   │   └── sqlc.yml                # SQLc configuration
+│   ├── local.yml                   # Local environment config
+│   └── release.yml                 # Production environment config
+├── migrations/                     # Migration files
+├── internal/
+│   ├── api/
+│   │   ├── handlers/               # HTTP request handlers
+│   │   │   ├── group_handler.go
+│   │   │   └── song_handler.go
+│   │   ├── routes/                 # API routes
+│   │   │   ├── path/               # Route definitions by domain
+│   │   │   │   ├── group.go
+│   │   │   │   └── song.go
+│   │   │   ├── router.go           # Router setup
+│   │   │   └── routes.go           # Route registration
+│   │   └── services/               # Business logic
+│   │       ├── group_service.go
+│   │       └── song_service.go
+│   ├── config/                     # Configuration handling
+│   │   ├── config.go
+│   │   └── timezone.go
+│   ├── pkg/
+│   │   └── utils/                  # Shared utilities
+│   │       ├── constants/
+│   │       │   └── timestamps.go
+│   │       ├── logger/             # Structured logging
+│   │       └── parser/             # Lyrics parsing utility
+│   └── storage/
+│       └── database/               # Database layer
+│           ├── db.go               # DB connection
+│           ├── models.go           # Generated models
+│           ├── query.sql.go        # Generated queries
+│           └── repository/         # Repository implementations
+│               ├── group_repository.go
+│               ├── manager.go      # Repository manager
+│               └── song_repository.go
+├── docs/
+│   ├── docs.go                     # Swagger generated code
+│   ├── music-service-postman.json  # Postman collection
+│   ├── swagger.json                # OpenAPI specification
+│   └── swagger.yaml                # OpenAPI YAML format
+├── Dockerfile                      # Docker build instructions
+├── docker-compose.yml              # Docker compose configuration
+├── atlas.hcl                       # Atlas migrations configuration
+```
 
 ## 🚀 Getting Started
 
