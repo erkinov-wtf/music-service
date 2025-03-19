@@ -22,7 +22,7 @@ UPDATE groups
 SET name = $2
 WHERE id = $1;
 
--- name: DeleteGroup :execresult
+-- name: DeleteGroup :exec
 UPDATE groups
 SET deleted_at = NOW()
 WHERE id = $1 AND deleted_at IS NULL;
