@@ -9,11 +9,11 @@ import (
 
 type GroupRepositoryInterface interface {
 	CreateGroup(ctx context.Context, name string) error
-	DeleteGroup(ctx context.Context, id uuid.UUID) error
 	GetGroup(ctx context.Context, id uuid.UUID) (database.Group, error)
 	GetGroupsCount(ctx context.Context) (int64, error)
 	GetGroupsWithPagination(ctx context.Context, limit, offset int32) ([]database.GetGroupsWithPaginationRow, error)
 	UpdateGroup(ctx context.Context, id uuid.UUID, name string) error
+	DeleteGroup(ctx context.Context, id uuid.UUID) error
 }
 
 type GroupRepository struct {

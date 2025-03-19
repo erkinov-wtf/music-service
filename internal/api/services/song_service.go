@@ -39,10 +39,6 @@ func (s *SongService) UpdateSong(ctx context.Context, params repository.SongUpda
 	return s.songRepo.UpdateSong(ctx, params)
 }
 
-func (s *SongService) DeleteSong(ctx context.Context, id uuid.UUID) error {
-	return s.songRepo.DeleteSong(ctx, id)
-}
-
 func (s *SongService) GetSongsByGroup(ctx context.Context, groupID uuid.UUID, limit, offset int32) ([]database.Song, error) {
 	return s.songRepo.GetSongsByGroup(ctx, groupID, limit, offset)
 }
@@ -53,4 +49,8 @@ func (s *SongService) GetSongsWithFilters(ctx context.Context, params repository
 
 func (s *SongService) GetSongsCountWithFilters(ctx context.Context, groupName, songTitle string) (int64, error) {
 	return s.songRepo.GetSongsCountWithFilters(ctx, groupName, songTitle)
+}
+
+func (s *SongService) DeleteSong(ctx context.Context, id uuid.UUID) error {
+	return s.songRepo.DeleteSong(ctx, id)
 }

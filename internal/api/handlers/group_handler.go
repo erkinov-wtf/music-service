@@ -8,7 +8,6 @@ import (
 	"strconv"
 )
 
-// GroupHandler handles HTTP requests for groups
 type GroupHandler struct {
 	groupService *services.GroupService
 }
@@ -38,22 +37,6 @@ func (h *GroupHandler) CreateGroup(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "Group created successfully"})
 }
 
-func (h *GroupHandler) DeleteGroup(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := uuid.Parse(idStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid group ID format"})
-		return
-	}
-
-	if err := h.groupService.DeleteGroup(c, id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete group: " + err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusNoContent, gin.H{"message": "Group deleted successfully"})
-}
-
 func (h *GroupHandler) GetGroup(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
@@ -71,7 +54,7 @@ func (h *GroupHandler) GetGroup(c *gin.Context) {
 	c.JSON(http.StatusOK, group)
 }
 
-func (h *GroupHandler) GetGroups(c *gin.Context) {
+func (h *GroupHandler) GetAllGroups(c *gin.Context) {
 	pageStr := c.Query("page")
 	limitStr := c.Query("limit")
 
@@ -124,15 +107,31 @@ func (h *GroupHandler) UpdateGroup(c *gin.Context) {
 		Name string `json:"name" binding:"required"`
 	}
 
-	if err := c.BindJSON(&body); err != nil {
+	if err = c.BindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if err := h.groupService.UpdateGroup(c, id, body.Name); err != nil {
+	if err = h.groupService.UpdateGroup(c, id, body.Name); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update group: " + err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Group updated successfully"})
+}
+
+func (h *GroupHandler) DeleteGroup(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid group ID format"})
+		return
+	}
+
+	if err := h.groupService.DeleteGroup(c, id); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete group: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusNoContent, gin.H{"message": "Group deleted successfully"})
 }

@@ -11,12 +11,10 @@ import (
 	"time"
 )
 
-// SongHandler handles HTTP requests for songs
 type SongHandler struct {
 	songService *services.SongService
 }
 
-// NewSongHandler creates a new song handler
 func NewSongHandler(songService *services.SongService) *SongHandler {
 	return &SongHandler{
 		songService: songService,
@@ -84,9 +82,10 @@ func (h *SongHandler) GetSong(c *gin.Context) {
 	c.JSON(http.StatusOK, song)
 }
 
-func (h *SongHandler) GetSongs(c *gin.Context) {
+func (h *SongHandler) GetAllSongs(c *gin.Context) {
 	pageStr := c.Query("page")
 	limitStr := c.Query("limit")
+
 	groupName := c.Query("group")
 	songTitle := c.Query("song")
 
@@ -168,7 +167,7 @@ func (h *SongHandler) UpdateSong(c *gin.Context) {
 		Link        string `json:"link" binding:"required"`
 	}
 
-	if err := c.BindJSON(&body); err != nil {
+	if err = c.BindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -217,76 +216,4 @@ func (h *SongHandler) DeleteSong(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusNoContent, gin.H{"message": "Song deleted successfully"})
-}
-
-func (h *SongHandler) GetSongsByGroup(c *gin.Context) {
-	groupIDStr := c.Param("group_id")
-	groupID, err := uuid.Parse(groupIDStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid group ID format"})
-		return
-	}
-
-	limitStr := c.Query("limit")
-	offsetStr := c.Query("offset")
-
-	limit, err := strconv.Atoi(limitStr)
-	if err != nil || limit < 1 {
-		limit = 10
-	}
-
-	offset, err := strconv.Atoi(offsetStr)
-	if err != nil || offset < 0 {
-		offset = 0
-	}
-
-	songs, err := h.songService.GetSongsByGroup(c, groupID, int32(limit), int32(offset))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve songs: " + err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, songs)
-}
-
-func (h *SongHandler) GetSongsWithFilters(c *gin.Context) {
-	var body struct {
-		Limit     int32  `json:"limit"`
-		Offset    int32  `json:"offset"`
-		GroupName string `json:"group_name"`
-		SongTitle string `json:"song_title"`
-	}
-
-	if err := c.BindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	params := repository.SongFilterParams{
-		Limit:     body.Limit,
-		Offset:    body.Offset,
-		GroupName: body.GroupName,
-		SongTitle: body.SongTitle,
-	}
-
-	songs, err := h.songService.GetSongsWithFilters(c, params)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve songs: " + err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, songs)
-}
-
-func (h *SongHandler) GetSongsCountWithFilters(c *gin.Context) {
-	groupName := c.Query("group_name")
-	songTitle := c.Query("song_title")
-
-	count, err := h.songService.GetSongsCountWithFilters(c, groupName, songTitle)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve songs count with filters: " + err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"count": count})
 }

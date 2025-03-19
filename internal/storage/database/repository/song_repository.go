@@ -14,10 +14,10 @@ type SongRepositoryInterface interface {
 	GetSongsCount(ctx context.Context) (int64, error)
 	GetSongsWithPagination(ctx context.Context, limit, offset int32) ([]database.GetSongsWithPaginationRow, error)
 	UpdateSong(ctx context.Context, params SongUpdateParams) error
-	DeleteSong(ctx context.Context, id uuid.UUID) error
 	GetSongsByGroup(ctx context.Context, groupID uuid.UUID, limit, offset int32) ([]database.Song, error)
 	GetSongsWithFilters(ctx context.Context, params SongFilterParams) ([]database.GetSongsWithPaginationRow, error)
 	GetSongsCountWithFilters(ctx context.Context, groupName, songTitle string) (int64, error)
+	DeleteSong(ctx context.Context, id uuid.UUID) error
 }
 
 type SongCreateParams struct {
