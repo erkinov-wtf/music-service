@@ -317,24 +317,36 @@ paths:
           description: Created song data
           schema:
             properties:
-              created_at:
-                type: string
-              group_id:
-                type: string
-              id:
-                type: string
-              link:
-                type: string
-              lyrics:
-                type: string
-              release_date:
-                type: string
-              runtime:
-                type: integer
-              title:
-                type: string
-              updated_at:
-                type: string
+              data:
+                properties:
+                  created_at:
+                    type: string
+                  group:
+                    properties:
+                      created_at:
+                        type: string
+                      id:
+                        type: string
+                      name:
+                        type: string
+                      updated_at:
+                        type: string
+                    type: object
+                  id:
+                    type: string
+                  link:
+                    type: string
+                  lyrics:
+                    type: string
+                  release_date:
+                    type: string
+                  runtime:
+                    type: integer
+                  title:
+                    type: string
+                  updated_at:
+                    type: string
+                type: object
             type: object
         "400":
           description: Bad request - Invalid input data
@@ -408,8 +420,17 @@ paths:
             properties:
               created_at:
                 type: string
-              group_id:
-                type: string
+              group:
+                properties:
+                  created_at:
+                    type: string
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  updated_at:
+                    type: string
+                type: object
               id:
                 type: string
               link:
@@ -480,24 +501,36 @@ paths:
           description: Updated song data
           schema:
             properties:
-              created_at:
-                type: string
-              group_id:
-                type: string
-              id:
-                type: string
-              link:
-                type: string
-              lyrics:
-                type: string
-              release_date:
-                type: string
-              runtime:
-                type: integer
-              title:
-                type: string
-              updated_at:
-                type: string
+              message:
+                properties:
+                  created_at:
+                    type: string
+                  group:
+                    properties:
+                      created_at:
+                        type: string
+                      id:
+                        type: string
+                      name:
+                        type: string
+                      updated_at:
+                        type: string
+                    type: object
+                  id:
+                    type: string
+                  link:
+                    type: string
+                  lyrics:
+                    type: string
+                  release_date:
+                    type: string
+                  runtime:
+                    type: integer
+                  title:
+                    type: string
+                  updated_at:
+                    type: string
+                type: object
             type: object
         "400":
           description: Bad request - Invalid input or ID
@@ -521,6 +554,63 @@ paths:
                 type: string
             type: object
       summary: Update a song
+      tags:
+      - songs
+  /songs/{id}/verses:
+    get:
+      description: Get a song's lyrics split by verses (lines) with pagination
+      parameters:
+      - description: Song ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Paginated verses
+          schema:
+            properties:
+              limit:
+                type: integer
+              page:
+                type: integer
+              pages:
+                type: integer
+              song_id:
+                type: string
+              total:
+                type: integer
+              verses:
+                type: array
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "404":
+          description: Song not found
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      summary: Get song verses with pagination
       tags:
       - songs
 swagger: "2.0"

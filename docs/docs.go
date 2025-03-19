@@ -487,32 +487,51 @@ const docTemplate = `{
                         "schema": {
                             "type": "object",
                             "properties": {
-                                "created_at": {
-                                    "type": "string"
-                                },
-                                "group_id": {
-                                    "type": "string"
-                                },
-                                "id": {
-                                    "type": "string"
-                                },
-                                "link": {
-                                    "type": "string"
-                                },
-                                "lyrics": {
-                                    "type": "string"
-                                },
-                                "release_date": {
-                                    "type": "string"
-                                },
-                                "runtime": {
-                                    "type": "integer"
-                                },
-                                "title": {
-                                    "type": "string"
-                                },
-                                "updated_at": {
-                                    "type": "string"
+                                "data": {
+                                    "type": "object",
+                                    "properties": {
+                                        "created_at": {
+                                            "type": "string"
+                                        },
+                                        "group": {
+                                            "type": "object",
+                                            "properties": {
+                                                "created_at": {
+                                                    "type": "string"
+                                                },
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        },
+                                        "id": {
+                                            "type": "string"
+                                        },
+                                        "link": {
+                                            "type": "string"
+                                        },
+                                        "lyrics": {
+                                            "type": "string"
+                                        },
+                                        "release_date": {
+                                            "type": "string"
+                                        },
+                                        "runtime": {
+                                            "type": "integer"
+                                        },
+                                        "title": {
+                                            "type": "string"
+                                        },
+                                        "updated_at": {
+                                            "type": "string"
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -571,8 +590,22 @@ const docTemplate = `{
                                 "created_at": {
                                     "type": "string"
                                 },
-                                "group_id": {
-                                    "type": "string"
+                                "group": {
+                                    "type": "object",
+                                    "properties": {
+                                        "created_at": {
+                                            "type": "string"
+                                        },
+                                        "id": {
+                                            "type": "string"
+                                        },
+                                        "name": {
+                                            "type": "string"
+                                        },
+                                        "updated_at": {
+                                            "type": "string"
+                                        }
+                                    }
                                 },
                                 "id": {
                                     "type": "string"
@@ -679,32 +712,51 @@ const docTemplate = `{
                         "schema": {
                             "type": "object",
                             "properties": {
-                                "created_at": {
-                                    "type": "string"
-                                },
-                                "group_id": {
-                                    "type": "string"
-                                },
-                                "id": {
-                                    "type": "string"
-                                },
-                                "link": {
-                                    "type": "string"
-                                },
-                                "lyrics": {
-                                    "type": "string"
-                                },
-                                "release_date": {
-                                    "type": "string"
-                                },
-                                "runtime": {
-                                    "type": "integer"
-                                },
-                                "title": {
-                                    "type": "string"
-                                },
-                                "updated_at": {
-                                    "type": "string"
+                                "message": {
+                                    "type": "object",
+                                    "properties": {
+                                        "created_at": {
+                                            "type": "string"
+                                        },
+                                        "group": {
+                                            "type": "object",
+                                            "properties": {
+                                                "created_at": {
+                                                    "type": "string"
+                                                },
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        },
+                                        "id": {
+                                            "type": "string"
+                                        },
+                                        "link": {
+                                            "type": "string"
+                                        },
+                                        "lyrics": {
+                                            "type": "string"
+                                        },
+                                        "release_date": {
+                                            "type": "string"
+                                        },
+                                        "runtime": {
+                                            "type": "integer"
+                                        },
+                                        "title": {
+                                            "type": "string"
+                                        },
+                                        "updated_at": {
+                                            "type": "string"
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -788,6 +840,92 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/songs/{id}/verses": {
+            "get": {
+                "description": "Get a song's lyrics split by verses (lines) with pagination",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "songs"
+                ],
+                "summary": "Get song verses with pagination",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Song ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Items per page",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated verses",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "limit": {
+                                    "type": "integer"
+                                },
+                                "page": {
+                                    "type": "integer"
+                                },
+                                "pages": {
+                                    "type": "integer"
+                                },
+                                "song_id": {
+                                    "type": "string"
+                                },
+                                "total": {
+                                    "type": "integer"
+                                },
+                                "verses": {
+                                    "type": "array"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "error": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Song not found",
                         "schema": {
                             "type": "object",
                             "properties": {

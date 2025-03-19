@@ -16,13 +16,36 @@ import (
 )
 
 type SongHandler struct {
-	songService *services.SongService
+	songService  *services.SongService
+	groupService *services.GroupService
 }
 
-func NewSongHandler(songService *services.SongService) *SongHandler {
+func NewSongHandler(songService *services.SongService, groupService *services.GroupService) *SongHandler {
 	return &SongHandler{
-		songService: songService,
+		songService:  songService,
+		groupService: groupService,
 	}
+}
+
+// GroupData represents group information to be included in song responses
+type GroupData struct {
+	ID        string    `json:"id"`
+	Name      string    `json:"name"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// SongResponse is the formatted song response for the API
+type SongResponse struct {
+	ID          string    `json:"id"`
+	Group       GroupData `json:"group"` // Changed from GroupID to Group
+	Title       string    `json:"title"`
+	Runtime     int32     `json:"runtime"`
+	Lyrics      string    `json:"lyrics"`
+	ReleaseDate time.Time `json:"release_date"`
+	Link        string    `json:"link"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 // CreateSong godoc
@@ -32,7 +55,7 @@ func NewSongHandler(songService *services.SongService) *SongHandler {
 // @Accept json
 // @Produce json
 // @Param song body object{group_id=string,title=string,runtime=integer,lyrics=string,release_date=string,link=string} true "Song Information"
-// @Success 201 {object} object{id=string,group_id=string,title=string,runtime=integer,lyrics=string,release_date=string,link=string,created_at=string,updated_at=string} "Created song data"
+// @Success 201 {object} object{data=object{id=string,group=object{id=string,name=string,created_at=string,updated_at=string},title=string,runtime=integer,lyrics=string,release_date=string,link=string,created_at=string,updated_at=string}} "Created song data"
 // @Failure 400 {object} object{error=string} "Bad request - Invalid input data"
 // @Failure 500 {object} object{error=string} "Internal server error"
 // @Router /songs [post]
@@ -84,7 +107,7 @@ func (h *SongHandler) CreateSong(c *gin.Context) {
 		return
 	}
 
-	response, err := h.formatSong(song)
+	response, err := h.formatSong(c, song)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve song: " + err.Error()})
 		return
@@ -99,7 +122,7 @@ func (h *SongHandler) CreateSong(c *gin.Context) {
 // @Tags songs
 // @Produce json
 // @Param id path string true "Song ID" format(uuid)
-// @Success 200 {object} object{id=string,group_id=string,title=string,runtime=integer,lyrics=string,release_date=string,link=string,created_at=string,updated_at=string}
+// @Success 200 {object} object{id=string,group=object{id=string,name=string,created_at=string,updated_at=string},title=string,runtime=integer,lyrics=string,release_date=string,link=string,created_at=string,updated_at=string}
 // @Failure 400 {object} object{error=string} "Bad request"
 // @Failure 404 {object} object{error=string} "Song not found"
 // @Router /songs/{id} [get]
@@ -117,7 +140,7 @@ func (h *SongHandler) GetSong(c *gin.Context) {
 		return
 	}
 
-	response, err := h.formatSong(song)
+	response, err := h.formatSong(c, song)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve song: " + err.Error()})
 		return
@@ -195,7 +218,7 @@ func (h *SongHandler) GetAllSongs(c *gin.Context) {
 
 	totalPages := (int(total) + limit - 1) / limit
 
-	bulkSongs, err := h.formatBulkSongs(songs)
+	bulkSongs, err := h.formatBulkSongs(c, songs)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to formatting songs: " + err.Error()})
 		return
@@ -303,7 +326,7 @@ func (h *SongHandler) GetSongVerses(c *gin.Context) {
 // @Produce json
 // @Param id path string true "Song ID" format(uuid)
 // @Param song body object{group_id=string,title=string,runtime=integer,lyrics=string,release_date=string,link=string} true "Song Information"
-// @Success 200 {object} object{id=string,group_id=string,title=string,runtime=integer,lyrics=string,release_date=string,link=string,created_at=string,updated_at=string} "Updated song data"
+// @Success 200 {object} object{message=object{id=string,group=object{id=string,name=string,created_at=string,updated_at=string},title=string,runtime=integer,lyrics=string,release_date=string,link=string,created_at=string,updated_at=string}} "Updated song data"
 // @Failure 400 {object} object{error=string} "Bad request - Invalid input or ID"
 // @Failure 404 {object} object{error=string} "Song not found"
 // @Failure 500 {object} object{error=string} "Internal server error"
@@ -320,7 +343,7 @@ func (h *SongHandler) UpdateSong(c *gin.Context) {
 		GroupID     string `json:"group_id" binding:"required"`
 		Title       string `json:"title" binding:"required"`
 		Runtime     int32  `json:"runtime" binding:"required"`
-		Lyrics      []byte `json:"lyrics"`
+		Lyrics      string `json:"lyrics"`
 		ReleaseDate string `json:"release_date" binding:"required"`
 		Link        string `json:"link" binding:"required"`
 	}
@@ -342,12 +365,30 @@ func (h *SongHandler) UpdateSong(c *gin.Context) {
 		return
 	}
 
+	// If lyrics were provided, parse them
+	var lyricsJSON []byte
+	if body.Lyrics != "" {
+		lyricsJSON, err = parser.ParseLyrics(body.Lyrics)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process lyrics"})
+			return
+		}
+	} else {
+		// If no lyrics were provided, get the existing lyrics
+		song, err := h.songService.GetSong(c, id)
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Song not found"})
+			return
+		}
+		lyricsJSON = song.Lyrics
+	}
+
 	params := repository.SongUpdateParams{
 		ID:          id,
 		GroupID:     groupID,
 		Title:       body.Title,
 		Runtime:     body.Runtime,
-		Lyrics:      body.Lyrics,
+		Lyrics:      lyricsJSON,
 		ReleaseDate: releaseDate,
 		Link:        body.Link,
 	}
@@ -358,7 +399,7 @@ func (h *SongHandler) UpdateSong(c *gin.Context) {
 		return
 	}
 
-	response, err := h.formatSong(song)
+	response, err := h.formatSong(c, song)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve song: " + err.Error()})
 		return
@@ -393,20 +434,8 @@ func (h *SongHandler) DeleteSong(c *gin.Context) {
 	c.JSON(http.StatusNoContent, gin.H{"message": "Song deleted successfully"})
 }
 
-// SongResponse is the formatted song response for the API
-type SongResponse struct {
-	ID          string    `json:"id"`
-	GroupID     string    `json:"group_id"`
-	Title       string    `json:"title"`
-	Runtime     int32     `json:"runtime"`
-	Lyrics      string    `json:"lyrics"`
-	ReleaseDate time.Time `json:"release_date"`
-	Link        string    `json:"link"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-}
-
-func (h *SongHandler) formatSong(song database.Song) (SongResponse, error) {
+// Format a single song with group data
+func (h *SongHandler) formatSong(c *gin.Context, song database.Song) (SongResponse, error) {
 	var lyricsData struct {
 		Text   string   `json:"text"`
 		Verses []string `json:"verses"`
@@ -421,9 +450,24 @@ func (h *SongHandler) formatSong(song database.Song) (SongResponse, error) {
 		lyrics = strings.Join(lyricsData.Verses, "\n")
 	}
 
+	groupId, err := uuid.Parse(song.GroupID.String())
+	if err != nil {
+		return SongResponse{}, err
+	}
+
+	group, err := h.groupService.GetGroup(c, groupId)
+	if err != nil {
+		return SongResponse{}, err
+	}
+
 	return SongResponse{
-		ID:          song.ID.String(),
-		GroupID:     song.GroupID.String(),
+		ID: song.ID.String(),
+		Group: GroupData{
+			ID:        group.ID.String(),
+			Name:      group.Name,
+			CreatedAt: group.CreatedAt.Time,
+			UpdatedAt: group.UpdatedAt.Time,
+		},
 		Title:       song.Title,
 		Runtime:     song.Runtime,
 		Lyrics:      lyrics,
@@ -434,8 +478,11 @@ func (h *SongHandler) formatSong(song database.Song) (SongResponse, error) {
 	}, nil
 }
 
-func (h *SongHandler) formatBulkSongs(songs []database.GetSongsWithPaginationRow) ([]SongResponse, error) {
+// Format multiple songs with group data
+func (h *SongHandler) formatBulkSongs(c *gin.Context, songs []database.GetSongsWithPaginationRow) ([]SongResponse, error) {
 	var formattedSongs []SongResponse
+
+	groupCache := make(map[string]database.Group)
 
 	for _, song := range songs {
 		var lyricsData struct {
@@ -447,15 +494,35 @@ func (h *SongHandler) formatBulkSongs(songs []database.GetSongsWithPaginationRow
 			return nil, err
 		}
 
-		// For backward compatibility, use Text if available, otherwise join verses
 		lyrics := lyricsData.Text
 		if lyrics == "" && len(lyricsData.Verses) > 0 {
 			lyrics = strings.Join(lyricsData.Verses, "\n")
 		}
 
+		groupID := song.GroupID.String()
+		var group database.Group
+		var ok bool
+
+		if group, ok = groupCache[groupID]; !ok {
+			groupId, err := uuid.Parse(song.GroupID.String())
+			if err != nil {
+				return nil, err
+			}
+			group, err = h.groupService.GetGroup(c, groupId)
+			if err != nil {
+				return nil, err
+			}
+			groupCache[groupID] = group
+		}
+
 		formattedSong := SongResponse{
-			ID:          song.ID.String(),
-			GroupID:     song.GroupID.String(),
+			ID: song.ID.String(),
+			Group: GroupData{
+				ID:        group.ID.String(),
+				Name:      group.Name,
+				CreatedAt: group.CreatedAt.Time,
+				UpdatedAt: group.UpdatedAt.Time,
+			},
 			Title:       song.Title,
 			Runtime:     song.Runtime,
 			Lyrics:      lyrics,
