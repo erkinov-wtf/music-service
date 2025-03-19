@@ -183,7 +183,7 @@ func (h *GroupHandler) DeleteGroup(c *gin.Context) {
 		return
 	}
 
-	if err := h.groupService.DeleteGroup(c, id); err != nil {
+	if err = h.groupService.DeleteGroup(c, id); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete group: " + err.Error()})
 		return
 	}

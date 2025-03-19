@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"music-service/internal/api/services"
+	"music-service/internal/pkg/utils/constants"
 	"music-service/internal/storage/database"
 	"music-service/internal/storage/database/repository"
 	"net/http"
@@ -37,7 +39,7 @@ func (h *SongHandler) CreateSong(c *gin.Context) {
 		GroupID     string `json:"group_id" binding:"required"`
 		Title       string `json:"title" binding:"required"`
 		Runtime     int32  `json:"runtime" binding:"required"`
-		Lyrics      []byte `json:"lyrics"`
+		Lyrics      string `json:"lyrics"`
 		ReleaseDate string `json:"release_date" binding:"required"`
 		Link        string `json:"link" binding:"required"`
 	}
@@ -53,9 +55,16 @@ func (h *SongHandler) CreateSong(c *gin.Context) {
 		return
 	}
 
-	releaseDate, err := time.Parse(time.RFC3339, body.ReleaseDate)
+	releaseDate, err := time.Parse(constants.DateFormat, body.ReleaseDate)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid release date format"})
+		return
+	}
+
+	lyricsJSON := map[string]string{"text": body.Lyrics}
+	lyricsBytes, err := json.Marshal(lyricsJSON)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process lyrics"})
 		return
 	}
 
@@ -63,7 +72,7 @@ func (h *SongHandler) CreateSong(c *gin.Context) {
 		GroupID:     groupID,
 		Title:       body.Title,
 		Runtime:     body.Runtime,
-		Lyrics:      body.Lyrics,
+		Lyrics:      lyricsBytes,
 		ReleaseDate: releaseDate,
 		Link:        body.Link,
 	}
@@ -74,7 +83,13 @@ func (h *SongHandler) CreateSong(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": song})
+	response, err := h.formatSongResponse(song)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve song: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"message": response})
 }
 
 // GetSong godoc
@@ -101,7 +116,13 @@ func (h *SongHandler) GetSong(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, song)
+	response, err := h.formatSongResponse(song)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve song: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 // GetAllSongs godoc
@@ -173,8 +194,14 @@ func (h *SongHandler) GetAllSongs(c *gin.Context) {
 
 	totalPages := (int(total) + limit - 1) / limit
 
+	bulkSongs, err := h.formatBulkSongs(songs)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to formatting songs: " + err.Error()})
+		return
+	}
+
 	response := gin.H{
-		"data":  songs,
+		"data":  bulkSongs,
 		"page":  page,
 		"limit": limit,
 		"pages": totalPages,
@@ -247,7 +274,13 @@ func (h *SongHandler) UpdateSong(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": song})
+	response, err := h.formatSongResponse(song)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve song: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": response})
 }
 
 // DeleteSong godoc
@@ -274,4 +307,69 @@ func (h *SongHandler) DeleteSong(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusNoContent, gin.H{"message": "Song deleted successfully"})
+}
+
+// SongResponse is the formatted song response for the API
+type SongResponse struct {
+	ID          string    `json:"id"`
+	GroupID     string    `json:"group_id"`
+	Title       string    `json:"title"`
+	Runtime     int32     `json:"runtime"`
+	Lyrics      string    `json:"lyrics"`
+	ReleaseDate time.Time `json:"release_date"`
+	Link        string    `json:"link"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+func (h *SongHandler) formatSongResponse(song database.Song) (SongResponse, error) {
+	var lyricsData struct {
+		Text string `json:"text"`
+	}
+
+	if err := json.Unmarshal(song.Lyrics, &lyricsData); err != nil {
+		return SongResponse{}, err
+	}
+
+	return SongResponse{
+		ID:          song.ID.String(),
+		GroupID:     song.GroupID.String(),
+		Title:       song.Title,
+		Runtime:     song.Runtime,
+		Lyrics:      lyricsData.Text,
+		ReleaseDate: song.ReleaseDate.Time,
+		Link:        song.Link,
+		CreatedAt:   song.CreatedAt.Time,
+		UpdatedAt:   song.UpdatedAt.Time,
+	}, nil
+}
+
+func (h *SongHandler) formatBulkSongs(songs []database.GetSongsWithPaginationRow) ([]SongResponse, error) {
+	var formattedSongs []SongResponse
+
+	for _, song := range songs {
+		var lyricsData struct {
+			Text string `json:"text"`
+		}
+
+		if err := json.Unmarshal(song.Lyrics, &lyricsData); err != nil {
+			return nil, err
+		}
+
+		formattedSong := SongResponse{
+			ID:          song.ID.String(),
+			GroupID:     song.GroupID.String(),
+			Title:       song.Title,
+			Runtime:     song.Runtime,
+			Lyrics:      lyricsData.Text,
+			ReleaseDate: song.ReleaseDate.Time,
+			Link:        song.Link,
+			CreatedAt:   song.CreatedAt.Time,
+			UpdatedAt:   song.UpdatedAt.Time,
+		}
+
+		formattedSongs = append(formattedSongs, formattedSong)
+	}
+
+	return formattedSongs, nil
 }
