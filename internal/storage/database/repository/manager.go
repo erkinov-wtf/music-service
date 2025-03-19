@@ -13,10 +13,8 @@ import (
 
 // Manager wraps SQLC queries with connection management
 type Manager struct {
-	Groups     UserRepositoryInterface
-	Movies     MovieRepositoryInterface
-	TVShows    TVShowRepositoryInterface
-	Watchlists WatchlistRepositoryInterface
+	Groups     GroupRepositoryInterface
+	Songs      SongRepositoryInterface
 	rawQueries *database.Queries
 	pool       *pgxpool.Pool
 }
@@ -27,10 +25,8 @@ type Tx struct {
 }
 
 type ReposTx struct {
-	Users      UserRepositoryInterface
-	Movies     MovieRepositoryInterface
-	TVShows    TVShowRepositoryInterface
-	Watchlists WatchlistRepositoryInterface
+	Groups GroupRepositoryInterface
+	Songs  SongRepositoryInterface
 }
 
 // connectSqlcWithPool connects to the database and returns a SQLC Queries instance with the underlying pool
@@ -76,10 +72,8 @@ func connectSqlcWithPool(config *config.Config, ctx context.Context) (*Manager, 
 	)
 
 	return &Manager{
-		Users:      NewUserRepository(pool),
-		Movies:     NewMovieRepository(pool),
-		TVShows:    NewTVShowRepository(pool),
-		Watchlists: NewWatchlistRepository(pool),
+		Groups:     NewGroupRepository(pool),
+		Songs:      NewSongRepository(pool),
 		rawQueries: database.New(pool),
 		pool:       pool,
 	}, nil
@@ -113,10 +107,8 @@ func (m *Manager) BeginTx(ctx context.Context) (*Tx, error) {
 	return &Tx{
 		tx: tx,
 		Repos: &ReposTx{
-			Users:      NewUserRepository(tx),
-			Movies:     NewMovieRepository(tx),
-			TVShows:    NewTVShowRepository(tx),
-			Watchlists: NewWatchlistRepository(tx),
+			Groups: NewGroupRepository(tx),
+			Songs:  NewSongRepository(tx),
 		},
 	}, nil
 }
