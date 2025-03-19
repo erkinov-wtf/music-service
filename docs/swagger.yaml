@@ -1,0 +1,526 @@
+basePath: /api/v1
+host: localhost:8080
+info:
+  contact:
+    email: support@yourcompany.com
+    name: API Support
+    url: http://www.yourcompany.com/support
+  description: API Server for Music Service Application
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Music Service API
+  version: "1.0"
+paths:
+  /groups:
+    get:
+      description: Get a paginated list of music groups
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                type: array
+              limit:
+                type: integer
+              page:
+                type: integer
+              pages:
+                type: integer
+              total:
+                type: integer
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      summary: Get all music groups
+      tags:
+      - groups
+    post:
+      consumes:
+      - application/json
+      description: Create a new music group with the provided name
+      parameters:
+      - description: Group Name
+        in: body
+        name: group
+        required: true
+        schema:
+          properties:
+            name:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created group data
+          schema:
+            properties:
+              created_at:
+                type: string
+              id:
+                type: string
+              name:
+                type: string
+              updated_at:
+                type: string
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      summary: Create a new music group
+      tags:
+      - groups
+  /groups/{id}:
+    delete:
+      description: Delete a music group by ID
+      parameters:
+      - description: Group ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Group deleted successfully
+          schema:
+            properties:
+              message:
+                type: string
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      summary: Delete a music group
+      tags:
+      - groups
+    get:
+      description: Retrieve a music group by its ID
+      parameters:
+      - description: Group ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              created_at:
+                type: string
+              id:
+                type: string
+              name:
+                type: string
+              updated_at:
+                type: string
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "404":
+          description: Group not found
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      summary: Get a music group by ID
+      tags:
+      - groups
+    put:
+      consumes:
+      - application/json
+      description: Update a music group's information
+      parameters:
+      - description: Group ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Group Info
+        in: body
+        name: group
+        required: true
+        schema:
+          properties:
+            name:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Group updated successfully
+          schema:
+            properties:
+              created_at:
+                type: string
+              id:
+                type: string
+              name:
+                type: string
+              updated_at:
+                type: string
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      summary: Update a music group
+      tags:
+      - groups
+  /songs:
+    get:
+      description: Get a paginated list of songs with optional filtering by group
+        name and song title
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Filter by group name
+        in: query
+        name: group
+        type: string
+      - description: Filter by song title
+        in: query
+        name: song
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                type: array
+              limit:
+                type: integer
+              page:
+                type: integer
+              pages:
+                type: integer
+              total:
+                type: integer
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      summary: Get all songs with pagination and filtering
+      tags:
+      - songs
+    post:
+      consumes:
+      - application/json
+      description: Create a new song with the provided details and return the created
+        song data
+      parameters:
+      - description: Song Information
+        in: body
+        name: song
+        required: true
+        schema:
+          properties:
+            group_id:
+              type: string
+            link:
+              type: string
+            lyrics:
+              type: string
+            release_date:
+              type: string
+            runtime:
+              type: integer
+            title:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created song data
+          schema:
+            properties:
+              created_at:
+                type: string
+              group_id:
+                type: string
+              id:
+                type: string
+              link:
+                type: string
+              lyrics:
+                type: string
+              release_date:
+                type: string
+              runtime:
+                type: integer
+              title:
+                type: string
+              updated_at:
+                type: string
+            type: object
+        "400":
+          description: Bad request - Invalid input data
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      summary: Create a new song
+      tags:
+      - songs
+  /songs/{id}:
+    delete:
+      description: Delete a song by ID
+      parameters:
+      - description: Song ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Song deleted successfully
+          schema:
+            properties:
+              message:
+                type: string
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      summary: Delete a song
+      tags:
+      - songs
+    get:
+      description: Retrieve a song by its ID
+      parameters:
+      - description: Song ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              created_at:
+                type: string
+              group_id:
+                type: string
+              id:
+                type: string
+              link:
+                type: string
+              lyrics:
+                type: string
+              release_date:
+                type: string
+              runtime:
+                type: integer
+              title:
+                type: string
+              updated_at:
+                type: string
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "404":
+          description: Song not found
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      summary: Get a song by ID
+      tags:
+      - songs
+    put:
+      consumes:
+      - application/json
+      description: Update an existing song's information by ID and return the updated
+        song data
+      parameters:
+      - description: Song ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Song Information
+        in: body
+        name: song
+        required: true
+        schema:
+          properties:
+            group_id:
+              type: string
+            link:
+              type: string
+            lyrics:
+              type: string
+            release_date:
+              type: string
+            runtime:
+              type: integer
+            title:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated song data
+          schema:
+            properties:
+              created_at:
+                type: string
+              group_id:
+                type: string
+              id:
+                type: string
+              link:
+                type: string
+              lyrics:
+                type: string
+              release_date:
+                type: string
+              runtime:
+                type: integer
+              title:
+                type: string
+              updated_at:
+                type: string
+            type: object
+        "400":
+          description: Bad request - Invalid input or ID
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "404":
+          description: Song not found
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            properties:
+              error:
+                type: string
+            type: object
+      summary: Update a song
+      tags:
+      - songs
+swagger: "2.0"

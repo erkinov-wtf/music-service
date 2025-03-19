@@ -1,8 +1,9 @@
 /* Groups Table */
 
--- name: CreateGroup :execresult
+-- name: CreateGroup :one
 INSERT INTO groups (name)
-VALUES ($1);
+VALUES ($1)
+RETURNING *;
 
 -- name: GetGroup :one
 SELECT id, name, created_at, updated_at, deleted_at FROM groups
@@ -17,10 +18,11 @@ ORDER BY created_at DESC LIMIT $1 OFFSET $2;
 SELECT count(*) FROM groups
 WHERE deleted_at IS NULL;
 
--- name: UpdateGroup :execresult
+-- name: UpdateGroup :one
 UPDATE groups
 SET name = $2
-WHERE id = $1;
+WHERE id = $1
+RETURNING *;;
 
 -- name: DeleteGroup :exec
 UPDATE groups
@@ -29,9 +31,10 @@ WHERE id = $1 AND deleted_at IS NULL;
 
 /* Songs Table */
 
--- name: CreateSong :execresult
+-- name: CreateSong :one
 INSERT INTO songs (group_id, title, runtime, lyrics, release_date, link)
-VALUES ($1, $2, $3, $4, $5, $6);
+VALUES ($1, $2, $3, $4, $5, $6)
+RETURNING *;;
 
 -- name: GetSong :one
 SELECT id, group_id, title, runtime,  lyrics, release_date, link, created_at, updated_at, deleted_at
@@ -47,7 +50,7 @@ ORDER BY created_at DESC LIMIT $1 OFFSET $2;
 SELECT count(*) FROM songs
 WHERE deleted_at IS NULL;
 
--- name: UpdateSong :execresult
+-- name: UpdateSong :one
 UPDATE songs
 SET
     group_id = $2,
@@ -56,7 +59,8 @@ SET
     lyrics = $5,
     release_date = $6,
     link = $7
-WHERE id = $1;
+WHERE id = $1
+RETURNING *;;
 
 -- name: DeleteSong :execresult
 UPDATE songs

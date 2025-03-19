@@ -8,11 +8,11 @@ import (
 )
 
 type GroupRepositoryInterface interface {
-	CreateGroup(ctx context.Context, name string) error
+	CreateGroup(ctx context.Context, name string) (database.Group, error)
 	GetGroup(ctx context.Context, id uuid.UUID) (database.Group, error)
 	GetGroupsCount(ctx context.Context) (int64, error)
 	GetGroupsWithPagination(ctx context.Context, limit, offset int32) ([]database.GetGroupsWithPaginationRow, error)
-	UpdateGroup(ctx context.Context, id uuid.UUID, name string) error
+	UpdateGroup(ctx context.Context, id uuid.UUID, name string) (database.Group, error)
 	DeleteGroup(ctx context.Context, id uuid.UUID) error
 }
 
@@ -26,9 +26,8 @@ func NewGroupRepository(db database.DBTX) GroupRepositoryInterface {
 	}
 }
 
-func (r *GroupRepository) CreateGroup(ctx context.Context, name string) error {
-	_, err := r.q.CreateGroup(ctx, name)
-	return err
+func (r *GroupRepository) CreateGroup(ctx context.Context, name string) (database.Group, error) {
+	return r.q.CreateGroup(ctx, name)
 }
 
 func (r *GroupRepository) DeleteGroup(ctx context.Context, id uuid.UUID) error {
@@ -52,11 +51,10 @@ func (r *GroupRepository) GetGroupsWithPagination(ctx context.Context, limit, of
 	})
 }
 
-func (r *GroupRepository) UpdateGroup(ctx context.Context, id uuid.UUID, name string) error {
+func (r *GroupRepository) UpdateGroup(ctx context.Context, id uuid.UUID, name string) (database.Group, error) {
 	pgID := pgtype.UUID{Bytes: id, Valid: true}
-	_, err := r.q.UpdateGroup(ctx, database.UpdateGroupParams{
+	return r.q.UpdateGroup(ctx, database.UpdateGroupParams{
 		ID:   pgID,
 		Name: name,
 	})
-	return err
 }

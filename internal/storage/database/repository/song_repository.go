@@ -9,11 +9,11 @@ import (
 )
 
 type SongRepositoryInterface interface {
-	CreateSong(ctx context.Context, params SongCreateParams) error
+	CreateSong(ctx context.Context, params SongCreateParams) (database.Song, error)
 	GetSong(ctx context.Context, id uuid.UUID) (database.Song, error)
 	GetSongsCount(ctx context.Context) (int64, error)
 	GetSongsWithPagination(ctx context.Context, limit, offset int32) ([]database.GetSongsWithPaginationRow, error)
-	UpdateSong(ctx context.Context, params SongUpdateParams) error
+	UpdateSong(ctx context.Context, params SongUpdateParams) (database.Song, error)
 	GetSongsByGroup(ctx context.Context, groupID uuid.UUID, limit, offset int32) ([]database.Song, error)
 	GetSongsWithFilters(ctx context.Context, params SongFilterParams) ([]database.GetSongsWithPaginationRow, error)
 	GetSongsCountWithFilters(ctx context.Context, groupName, songTitle string) (int64, error)
@@ -56,11 +56,11 @@ func NewSongRepository(db database.DBTX) SongRepositoryInterface {
 	}
 }
 
-func (r *SongRepository) CreateSong(ctx context.Context, params SongCreateParams) error {
+func (r *SongRepository) CreateSong(ctx context.Context, params SongCreateParams) (database.Song, error) {
 	pgGroupID := pgtype.UUID{Bytes: params.GroupID, Valid: true}
 	pgReleaseDate := pgtype.Timestamptz{Time: params.ReleaseDate, Valid: true}
 
-	_, err := r.q.CreateSong(ctx, database.CreateSongParams{
+	return r.q.CreateSong(ctx, database.CreateSongParams{
 		GroupID:     pgGroupID,
 		Title:       params.Title,
 		Runtime:     params.Runtime,
@@ -68,7 +68,7 @@ func (r *SongRepository) CreateSong(ctx context.Context, params SongCreateParams
 		ReleaseDate: pgReleaseDate,
 		Link:        params.Link,
 	})
-	return err
+
 }
 
 func (r *SongRepository) GetSong(ctx context.Context, id uuid.UUID) (database.Song, error) {
@@ -87,12 +87,12 @@ func (r *SongRepository) GetSongsWithPagination(ctx context.Context, limit, offs
 	})
 }
 
-func (r *SongRepository) UpdateSong(ctx context.Context, params SongUpdateParams) error {
+func (r *SongRepository) UpdateSong(ctx context.Context, params SongUpdateParams) (database.Song, error) {
 	pgID := pgtype.UUID{Bytes: params.ID, Valid: true}
 	pgGroupID := pgtype.UUID{Bytes: params.GroupID, Valid: true}
 	pgReleaseDate := pgtype.Timestamptz{Time: params.ReleaseDate, Valid: true}
 
-	_, err := r.q.UpdateSong(ctx, database.UpdateSongParams{
+	return r.q.UpdateSong(ctx, database.UpdateSongParams{
 		ID:          pgID,
 		GroupID:     pgGroupID,
 		Title:       params.Title,
@@ -101,7 +101,6 @@ func (r *SongRepository) UpdateSong(ctx context.Context, params SongUpdateParams
 		ReleaseDate: pgReleaseDate,
 		Link:        params.Link,
 	})
-	return err
 }
 
 func (r *SongRepository) DeleteSong(ctx context.Context, id uuid.UUID) error {

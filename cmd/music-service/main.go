@@ -1,6 +1,21 @@
 // cmd/music-service/main.go
 package main
 
+// @title           Music Service API
+// @version         1.0
+// @description     API Server for Music Service Application
+// @termsOfService  http://swagger.io/terms/
+
+// @contact.name   API Support
+// @contact.url    http://www.yourcompany.com/support
+// @contact.email  support@yourcompany.com
+
+// @license.name  Apache 2.0
+// @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host      localhost:8080
+// @BasePath  /api/v1
+
 import (
 	"context"
 	"go.uber.org/fx"
@@ -14,6 +29,8 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+
+	_ "music-service/docs"
 )
 
 func provideEnv(cfg *config.Config) string {

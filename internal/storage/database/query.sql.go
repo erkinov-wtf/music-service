@@ -12,21 +12,32 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const createGroup = `-- name: CreateGroup :execresult
+const createGroup = `-- name: CreateGroup :one
 
 INSERT INTO groups (name)
 VALUES ($1)
+RETURNING id, name, created_at, updated_at, deleted_at
 `
 
 // Groups Table
-func (q *Queries) CreateGroup(ctx context.Context, name string) (pgconn.CommandTag, error) {
-	return q.db.Exec(ctx, createGroup, name)
+func (q *Queries) CreateGroup(ctx context.Context, name string) (Group, error) {
+	row := q.db.QueryRow(ctx, createGroup, name)
+	var i Group
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
 }
 
-const createSong = `-- name: CreateSong :execresult
+const createSong = `-- name: CreateSong :one
 
 INSERT INTO songs (group_id, title, runtime, lyrics, release_date, link)
 VALUES ($1, $2, $3, $4, $5, $6)
+RETURNING id, group_id, title, runtime, lyrics, release_date, link, created_at, updated_at, deleted_at
 `
 
 type CreateSongParams struct {
@@ -39,8 +50,8 @@ type CreateSongParams struct {
 }
 
 // Songs Table
-func (q *Queries) CreateSong(ctx context.Context, arg CreateSongParams) (pgconn.CommandTag, error) {
-	return q.db.Exec(ctx, createSong,
+func (q *Queries) CreateSong(ctx context.Context, arg CreateSongParams) (Song, error) {
+	row := q.db.QueryRow(ctx, createSong,
 		arg.GroupID,
 		arg.Title,
 		arg.Runtime,
@@ -48,6 +59,20 @@ func (q *Queries) CreateSong(ctx context.Context, arg CreateSongParams) (pgconn.
 		arg.ReleaseDate,
 		arg.Link,
 	)
+	var i Song
+	err := row.Scan(
+		&i.ID,
+		&i.GroupID,
+		&i.Title,
+		&i.Runtime,
+		&i.Lyrics,
+		&i.ReleaseDate,
+		&i.Link,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
 }
 
 const deleteGroup = `-- name: DeleteGroup :exec
@@ -363,10 +388,11 @@ func (q *Queries) GetSongsWithPagination(ctx context.Context, arg GetSongsWithPa
 	return items, nil
 }
 
-const updateGroup = `-- name: UpdateGroup :execresult
+const updateGroup = `-- name: UpdateGroup :one
 UPDATE groups
 SET name = $2
 WHERE id = $1
+RETURNING id, name, created_at, updated_at, deleted_at
 `
 
 type UpdateGroupParams struct {
@@ -374,11 +400,20 @@ type UpdateGroupParams struct {
 	Name string
 }
 
-func (q *Queries) UpdateGroup(ctx context.Context, arg UpdateGroupParams) (pgconn.CommandTag, error) {
-	return q.db.Exec(ctx, updateGroup, arg.ID, arg.Name)
+func (q *Queries) UpdateGroup(ctx context.Context, arg UpdateGroupParams) (Group, error) {
+	row := q.db.QueryRow(ctx, updateGroup, arg.ID, arg.Name)
+	var i Group
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
 }
 
-const updateSong = `-- name: UpdateSong :execresult
+const updateSong = `-- name: UpdateSong :one
 UPDATE songs
 SET
     group_id = $2,
@@ -388,6 +423,7 @@ SET
     release_date = $6,
     link = $7
 WHERE id = $1
+RETURNING id, group_id, title, runtime, lyrics, release_date, link, created_at, updated_at, deleted_at
 `
 
 type UpdateSongParams struct {
@@ -400,8 +436,8 @@ type UpdateSongParams struct {
 	Link        string
 }
 
-func (q *Queries) UpdateSong(ctx context.Context, arg UpdateSongParams) (pgconn.CommandTag, error) {
-	return q.db.Exec(ctx, updateSong,
+func (q *Queries) UpdateSong(ctx context.Context, arg UpdateSongParams) (Song, error) {
+	row := q.db.QueryRow(ctx, updateSong,
 		arg.ID,
 		arg.GroupID,
 		arg.Title,
@@ -410,4 +446,18 @@ func (q *Queries) UpdateSong(ctx context.Context, arg UpdateSongParams) (pgconn.
 		arg.ReleaseDate,
 		arg.Link,
 	)
+	var i Song
+	err := row.Scan(
+		&i.ID,
+		&i.GroupID,
+		&i.Title,
+		&i.Runtime,
+		&i.Lyrics,
+		&i.ReleaseDate,
+		&i.Link,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
 }

@@ -21,6 +21,17 @@ func NewSongHandler(songService *services.SongService) *SongHandler {
 	}
 }
 
+// CreateSong godoc
+// @Summary Create a new song
+// @Description Create a new song with the provided details and return the created song data
+// @Tags songs
+// @Accept json
+// @Produce json
+// @Param song body object{group_id=string,title=string,runtime=integer,lyrics=string,release_date=string,link=string} true "Song Information"
+// @Success 201 {object} object{id=string,group_id=string,title=string,runtime=integer,lyrics=string,release_date=string,link=string,created_at=string,updated_at=string} "Created song data"
+// @Failure 400 {object} object{error=string} "Bad request - Invalid input data"
+// @Failure 500 {object} object{error=string} "Internal server error"
+// @Router /songs [post]
 func (h *SongHandler) CreateSong(c *gin.Context) {
 	var body struct {
 		GroupID     string `json:"group_id" binding:"required"`
@@ -57,14 +68,25 @@ func (h *SongHandler) CreateSong(c *gin.Context) {
 		Link:        body.Link,
 	}
 
-	if err := h.songService.CreateSong(c, params); err != nil {
+	song, err := h.songService.CreateSong(c, params)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create song: " + err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "Song created successfully"})
+	c.JSON(http.StatusCreated, gin.H{"message": song})
 }
 
+// GetSong godoc
+// @Summary Get a song by ID
+// @Description Retrieve a song by its ID
+// @Tags songs
+// @Produce json
+// @Param id path string true "Song ID" format(uuid)
+// @Success 200 {object} object{id=string,group_id=string,title=string,runtime=integer,lyrics=string,release_date=string,link=string,created_at=string,updated_at=string}
+// @Failure 400 {object} object{error=string} "Bad request"
+// @Failure 404 {object} object{error=string} "Song not found"
+// @Router /songs/{id} [get]
 func (h *SongHandler) GetSong(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
@@ -82,6 +104,18 @@ func (h *SongHandler) GetSong(c *gin.Context) {
 	c.JSON(http.StatusOK, song)
 }
 
+// GetAllSongs godoc
+// @Summary Get all songs with pagination and filtering
+// @Description Get a paginated list of songs with optional filtering by group name and song title
+// @Tags songs
+// @Produce json
+// @Param page query int false "Page number" default(1)
+// @Param limit query int false "Items per page" default(10)
+// @Param group query string false "Filter by group name"
+// @Param song query string false "Filter by song title"
+// @Success 200 {object} object{data=array,page=int,limit=int,pages=int,total=int}
+// @Failure 500 {object} object{error=string} "Internal server error"
+// @Router /songs [get]
 func (h *SongHandler) GetAllSongs(c *gin.Context) {
 	pageStr := c.Query("page")
 	limitStr := c.Query("limit")
@@ -150,6 +184,19 @@ func (h *SongHandler) GetAllSongs(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// UpdateSong godoc
+// @Summary Update a song
+// @Description Update an existing song's information by ID and return the updated song data
+// @Tags songs
+// @Accept json
+// @Produce json
+// @Param id path string true "Song ID" format(uuid)
+// @Param song body object{group_id=string,title=string,runtime=integer,lyrics=string,release_date=string,link=string} true "Song Information"
+// @Success 200 {object} object{id=string,group_id=string,title=string,runtime=integer,lyrics=string,release_date=string,link=string,created_at=string,updated_at=string} "Updated song data"
+// @Failure 400 {object} object{error=string} "Bad request - Invalid input or ID"
+// @Failure 404 {object} object{error=string} "Song not found"
+// @Failure 500 {object} object{error=string} "Internal server error"
+// @Router /songs/{id} [put]
 func (h *SongHandler) UpdateSong(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
@@ -194,14 +241,25 @@ func (h *SongHandler) UpdateSong(c *gin.Context) {
 		Link:        body.Link,
 	}
 
-	if err := h.songService.UpdateSong(c, params); err != nil {
+	song, err := h.songService.UpdateSong(c, params)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update song: " + err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Song updated successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": song})
 }
 
+// DeleteSong godoc
+// @Summary Delete a song
+// @Description Delete a song by ID
+// @Tags songs
+// @Produce json
+// @Param id path string true "Song ID" format(uuid)
+// @Success 204 {object} object{message=string} "Song deleted successfully"
+// @Failure 400 {object} object{error=string} "Bad request"
+// @Failure 500 {object} object{error=string} "Internal server error"
+// @Router /songs/{id} [delete]
 func (h *SongHandler) DeleteSong(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)

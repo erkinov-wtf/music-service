@@ -19,7 +19,7 @@ func NewSongService(songRepo repository.SongRepositoryInterface) *SongService {
 	}
 }
 
-func (s *SongService) CreateSong(ctx context.Context, params repository.SongCreateParams) error {
+func (s *SongService) CreateSong(ctx context.Context, params repository.SongCreateParams) (database.Song, error) {
 	return s.songRepo.CreateSong(ctx, params)
 }
 
@@ -35,7 +35,7 @@ func (s *SongService) GetSongsWithPagination(ctx context.Context, limit, offset 
 	return s.songRepo.GetSongsWithPagination(ctx, limit, offset)
 }
 
-func (s *SongService) UpdateSong(ctx context.Context, params repository.SongUpdateParams) error {
+func (s *SongService) UpdateSong(ctx context.Context, params repository.SongUpdateParams) (database.Song, error) {
 	return s.songRepo.UpdateSong(ctx, params)
 }
 

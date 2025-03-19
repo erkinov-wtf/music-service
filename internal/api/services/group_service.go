@@ -19,7 +19,7 @@ func NewGroupService(groupRepo repository.GroupRepositoryInterface) *GroupServic
 	}
 }
 
-func (s *GroupService) CreateGroup(ctx context.Context, name string) error {
+func (s *GroupService) CreateGroup(ctx context.Context, name string) (database.Group, error) {
 	return s.groupRepo.CreateGroup(ctx, name)
 }
 
@@ -35,7 +35,7 @@ func (s *GroupService) GetGroupsWithPagination(ctx context.Context, limit, offse
 	return s.groupRepo.GetGroupsWithPagination(ctx, limit, offset)
 }
 
-func (s *GroupService) UpdateGroup(ctx context.Context, id uuid.UUID, name string) error {
+func (s *GroupService) UpdateGroup(ctx context.Context, id uuid.UUID, name string) (database.Group, error) {
 	return s.groupRepo.UpdateGroup(ctx, id, name)
 }
 
