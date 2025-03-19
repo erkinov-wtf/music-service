@@ -25,7 +25,6 @@ type Config struct {
 type Internal struct {
 	Server   Server   `yaml:"server"`
 	Database Database `yaml:"database"`
-	Jwt      Jwt      `yaml:"jwt"`
 }
 
 type Server struct {
@@ -41,15 +40,6 @@ type Database struct {
 	Schema   string `yaml:"schema"`
 	Password string `yaml:"password"`
 	Timezone string // will be set in MustLoad
-}
-
-type Jwt struct {
-	Audience        string `yaml:"audience"`
-	Domain          string `yaml:"domain"`
-	Realm           string `yaml:"realm"`
-	Secret          string `yaml:"secret"`
-	AccessTokenTTL  int    `yaml:"access_token_ttl"`
-	RefreshTokenTTL int    `yaml:"refresh_token_ttl"`
 }
 
 func MustLoad() *Config {
@@ -95,7 +85,6 @@ func MustLoad() *Config {
 		if envCfg.ProductionConfigs != nil {
 			cfg.Internal = *envCfg.ProductionConfigs
 			updateDbCredentials(&cfg.Internal.Database)
-			updateJwtSecret(&cfg.Internal.Jwt)
 		} else {
 			panic("production configs are not found")
 		}
@@ -128,11 +117,5 @@ func updateDbCredentials(db *Database) {
 	}
 	if port := os.Getenv("DB_PORT"); port != "" {
 		db.Port = port
-	}
-}
-
-func updateJwtSecret(currentSecret *Jwt) {
-	if jwtSecret := os.Getenv("JWT_SECRET"); jwtSecret != "" {
-		currentSecret.Secret = jwtSecret
 	}
 }

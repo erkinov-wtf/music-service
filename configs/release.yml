@@ -10,11 +10,3 @@ production_configs:
     user: "postgres"
     schema: "public"
     password: "postgres" # will be overwritten from os.Getenv()
-
-  jwt:
-    audience: "newUsersProd"
-    domain: "https://google.com"
-    realm: "com.google"
-    secret: "SomeFuckingJwtCode" # will be overwritten from os.Getenv()
-    access_token_ttl: 30
-    refresh_token_ttl: 5040
