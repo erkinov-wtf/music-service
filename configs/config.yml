@@ -1,0 +1,3 @@
+app_name: "music-service"
+env: "local" # local | release -> will be overwritten from os.Getenv()
+timezone: "Asia/Tashkent"
