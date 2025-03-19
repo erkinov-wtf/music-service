@@ -53,7 +53,7 @@ type Jwt struct {
 }
 
 func MustLoad() *Config {
-	const configPath = "config/config.yml"
+	const configPath = "configs/config.yml"
 
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		log.Fatalf("config file does not exist: %s", configPath)
@@ -73,7 +73,7 @@ func MustLoad() *Config {
 		cfg.Env = ReleaseEnv
 	}
 
-	envConfigPath := fmt.Sprintf("config/%s.yml", cfg.Env)
+	envConfigPath := fmt.Sprintf("configs/%s.yml", cfg.Env)
 	if _, err := os.Stat(envConfigPath); os.IsNotExist(err) {
 		log.Fatalf("environment config file does not exist: %s", envConfigPath)
 	}
