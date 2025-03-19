@@ -248,7 +248,7 @@ func (q *Queries) GetSongsCountWithFilters(ctx context.Context, arg GetSongsCoun
 const getSongsWithFilters = `-- name: GetSongsWithFilters :many
 SELECT s.id, s.group_id, s.title, s.runtime, s.lyrics, s.release_date, s.link, s.created_at,  s.updated_at
 FROM songs s
-JOIN groups g ON s.group_id = g.id
+         JOIN groups g ON s.group_id = g.id
 WHERE s.deleted_at IS NULL
   AND (LOWER(g.name) LIKE LOWER('%' || NULLIF($3, '')::VARCHAR || '%') OR $3 = '')
   AND (LOWER(s.title) LIKE LOWER('%' || NULLIF($4, '')::VARCHAR || '%') OR $4 = '')
@@ -257,10 +257,10 @@ ORDER BY s.created_at DESC
 `
 
 type GetSongsWithFiltersParams struct {
-	Limit     int32
-	Offset    int32
-	GroupName interface{}
-	SongTitle interface{}
+	Limit   int32
+	Offset  int32
+	Column3 interface{}
+	Column4 interface{}
 }
 
 type GetSongsWithFiltersRow struct {
@@ -279,8 +279,8 @@ func (q *Queries) GetSongsWithFilters(ctx context.Context, arg GetSongsWithFilte
 	rows, err := q.db.Query(ctx, getSongsWithFilters,
 		arg.Limit,
 		arg.Offset,
-		arg.GroupName,
-		arg.SongTitle,
+		arg.Column3,
+		arg.Column4,
 	)
 	if err != nil {
 		return nil, err

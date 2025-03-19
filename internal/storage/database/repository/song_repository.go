@@ -16,7 +16,7 @@ type SongRepositoryInterface interface {
 	UpdateSong(ctx context.Context, params SongUpdateParams) error
 	DeleteSong(ctx context.Context, id uuid.UUID) error
 	GetSongsByGroup(ctx context.Context, groupID uuid.UUID, limit, offset int32) ([]database.Song, error)
-	GetSongsWithFilters(ctx context.Context, params SongFilterParams) ([]database.GetSongsWithFiltersRow, error)
+	GetSongsWithFilters(ctx context.Context, params SongFilterParams) ([]database.GetSongsWithPaginationRow, error)
 	GetSongsCountWithFilters(ctx context.Context, groupName, songTitle string) (int64, error)
 }
 
@@ -119,13 +119,22 @@ func (r *SongRepository) GetSongsByGroup(ctx context.Context, groupID uuid.UUID,
 	})
 }
 
-func (r *SongRepository) GetSongsWithFilters(ctx context.Context, params SongFilterParams) ([]database.GetSongsWithFiltersRow, error) {
-	return r.q.GetSongsWithFilters(ctx, database.GetSongsWithFiltersParams{
-		Limit:     params.Limit,
-		Offset:    params.Offset,
-		GroupName: params.GroupName,
-		SongTitle: params.SongTitle,
+func (r *SongRepository) GetSongsWithFilters(ctx context.Context, params SongFilterParams) ([]database.GetSongsWithPaginationRow, error) {
+	rows, err := r.q.GetSongsWithFilters(ctx, database.GetSongsWithFiltersParams{
+		Limit:   params.Limit,
+		Offset:  params.Offset,
+		Column3: params.GroupName,
+		Column4: params.SongTitle,
 	})
+	if err != nil {
+		return nil, err
+	}
+
+	var songs []database.GetSongsWithPaginationRow
+	for _, row := range rows {
+		songs = append(songs, database.GetSongsWithPaginationRow(row))
+	}
+	return songs, nil
 }
 
 func (r *SongRepository) GetSongsCountWithFilters(ctx context.Context, groupName, songTitle string) (int64, error) {
