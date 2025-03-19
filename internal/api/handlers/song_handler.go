@@ -6,10 +6,12 @@ import (
 	"github.com/google/uuid"
 	"music-service/internal/api/services"
 	"music-service/internal/pkg/utils/constants"
+	"music-service/internal/pkg/utils/parser"
 	"music-service/internal/storage/database"
 	"music-service/internal/storage/database/repository"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -61,8 +63,7 @@ func (h *SongHandler) CreateSong(c *gin.Context) {
 		return
 	}
 
-	lyricsJSON := map[string]string{"text": body.Lyrics}
-	lyricsBytes, err := json.Marshal(lyricsJSON)
+	lyricsJSON, err := parser.ParseLyrics(body.Lyrics)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process lyrics"})
 		return
@@ -72,7 +73,7 @@ func (h *SongHandler) CreateSong(c *gin.Context) {
 		GroupID:     groupID,
 		Title:       body.Title,
 		Runtime:     body.Runtime,
-		Lyrics:      lyricsBytes,
+		Lyrics:      lyricsJSON,
 		ReleaseDate: releaseDate,
 		Link:        body.Link,
 	}
@@ -83,13 +84,13 @@ func (h *SongHandler) CreateSong(c *gin.Context) {
 		return
 	}
 
-	response, err := h.formatSongResponse(song)
+	response, err := h.formatSong(song)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve song: " + err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": response})
+	c.JSON(http.StatusCreated, gin.H{"data": response})
 }
 
 // GetSong godoc
@@ -116,7 +117,7 @@ func (h *SongHandler) GetSong(c *gin.Context) {
 		return
 	}
 
-	response, err := h.formatSongResponse(song)
+	response, err := h.formatSong(song)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve song: " + err.Error()})
 		return
@@ -211,6 +212,89 @@ func (h *SongHandler) GetAllSongs(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// GetSongVerses godoc
+// @Summary Get song verses with pagination
+// @Description Get a song's lyrics split by verses (lines) with pagination
+// @Tags songs
+// @Produce json
+// @Param id path string true "Song ID" format(uuid)
+// @Param page query int false "Page number" default(1)
+// @Param limit query int false "Items per page" default(10)
+// @Success 200 {object} object{song_id=string,page=int,limit=int,pages=int,total=int,verses=array} "Paginated verses"
+// @Failure 400 {object} object{error=string} "Bad request"
+// @Failure 404 {object} object{error=string} "Song not found"
+// @Router /songs/{id}/verses [get]
+func (h *SongHandler) GetSongVerses(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid song ID format"})
+		return
+	}
+
+	pageStr := c.DefaultQuery("page", "1")
+	limitStr := c.DefaultQuery("limit", "10")
+
+	page, err := strconv.Atoi(pageStr)
+	if err != nil || page < 1 {
+		page = 1
+	}
+
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil || limit < 1 {
+		limit = 10
+	}
+
+	song, err := h.songService.GetSong(c, id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Song not found"})
+		return
+	}
+
+	var lyricsData struct {
+		Text   string   `json:"text"`
+		Verses []string `json:"verses"`
+	}
+
+	if err = json.Unmarshal(song.Lyrics, &lyricsData); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse lyrics"})
+		return
+	}
+
+	total := len(lyricsData.Verses)
+	pages := (total + limit - 1) / limit
+
+	startIndex := (page - 1) * limit
+	endIndex := startIndex + limit
+
+	if startIndex >= total {
+		c.JSON(http.StatusOK, gin.H{
+			"song_id": song.ID.String(),
+			"page":    page,
+			"limit":   limit,
+			"pages":   pages,
+			"total":   total,
+			"verses":  []string{},
+		})
+		return
+	}
+
+	if endIndex > total {
+		endIndex = total
+	}
+
+	verses := lyricsData.Verses[startIndex:endIndex]
+
+	c.JSON(http.StatusOK, gin.H{
+		"song_id": song.ID.String(),
+		"page":    page,
+		"limit":   limit,
+		"pages":   pages,
+		"total":   total,
+		"verses":  verses,
+	})
+}
+
 // UpdateSong godoc
 // @Summary Update a song
 // @Description Update an existing song's information by ID and return the updated song data
@@ -274,7 +358,7 @@ func (h *SongHandler) UpdateSong(c *gin.Context) {
 		return
 	}
 
-	response, err := h.formatSongResponse(song)
+	response, err := h.formatSong(song)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve song: " + err.Error()})
 		return
@@ -322,13 +406,19 @@ type SongResponse struct {
 	UpdatedAt   time.Time `json:"updated_at"`
 }
 
-func (h *SongHandler) formatSongResponse(song database.Song) (SongResponse, error) {
+func (h *SongHandler) formatSong(song database.Song) (SongResponse, error) {
 	var lyricsData struct {
-		Text string `json:"text"`
+		Text   string   `json:"text"`
+		Verses []string `json:"verses"`
 	}
 
 	if err := json.Unmarshal(song.Lyrics, &lyricsData); err != nil {
 		return SongResponse{}, err
+	}
+
+	lyrics := lyricsData.Text
+	if lyrics == "" && len(lyricsData.Verses) > 0 {
+		lyrics = strings.Join(lyricsData.Verses, "\n")
 	}
 
 	return SongResponse{
@@ -336,7 +426,7 @@ func (h *SongHandler) formatSongResponse(song database.Song) (SongResponse, erro
 		GroupID:     song.GroupID.String(),
 		Title:       song.Title,
 		Runtime:     song.Runtime,
-		Lyrics:      lyricsData.Text,
+		Lyrics:      lyrics,
 		ReleaseDate: song.ReleaseDate.Time,
 		Link:        song.Link,
 		CreatedAt:   song.CreatedAt.Time,
@@ -349,11 +439,18 @@ func (h *SongHandler) formatBulkSongs(songs []database.GetSongsWithPaginationRow
 
 	for _, song := range songs {
 		var lyricsData struct {
-			Text string `json:"text"`
+			Text   string   `json:"text"`
+			Verses []string `json:"verses"`
 		}
 
 		if err := json.Unmarshal(song.Lyrics, &lyricsData); err != nil {
 			return nil, err
+		}
+
+		// For backward compatibility, use Text if available, otherwise join verses
+		lyrics := lyricsData.Text
+		if lyrics == "" && len(lyricsData.Verses) > 0 {
+			lyrics = strings.Join(lyricsData.Verses, "\n")
 		}
 
 		formattedSong := SongResponse{
@@ -361,7 +458,7 @@ func (h *SongHandler) formatBulkSongs(songs []database.GetSongsWithPaginationRow
 			GroupID:     song.GroupID.String(),
 			Title:       song.Title,
 			Runtime:     song.Runtime,
-			Lyrics:      lyricsData.Text,
+			Lyrics:      lyrics,
 			ReleaseDate: song.ReleaseDate.Time,
 			Link:        song.Link,
 			CreatedAt:   song.CreatedAt.Time,

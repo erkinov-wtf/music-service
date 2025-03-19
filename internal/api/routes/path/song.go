@@ -6,12 +6,13 @@ import (
 )
 
 func RegisterSongRoutes(r *gin.RouterGroup, handler *handlers.SongHandler) {
-	groups := r.Group("/songs")
+	songs := r.Group("/songs")
 	{
-		groups.POST("", handler.CreateSong)
-		groups.GET("", handler.GetAllSongs)
-		groups.GET("/:id", handler.GetSong)
-		groups.PUT("/:id", handler.UpdateSong)
-		groups.DELETE("/:id", handler.DeleteSong)
+		songs.POST("", handler.CreateSong)
+		songs.GET("", handler.GetAllSongs)
+		songs.GET("/:id", handler.GetSong)
+		songs.GET("/:id/verses", handler.GetSongVerses)
+		songs.PUT("/:id", handler.UpdateSong)
+		songs.DELETE("/:id", handler.DeleteSong)
 	}
 }
